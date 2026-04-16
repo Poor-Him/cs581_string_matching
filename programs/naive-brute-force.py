@@ -55,8 +55,13 @@ parser.add_argument(
     help="Path to input file (.txt or .fna)"
 )
 parser.add_argument(
+    "--pattern-file",
+    default=None,
+    help="Read pattern from a file instead of --pattern"
+)
+parser.add_argument(
     "--pattern",
-    required=True,
+    default=None, 
     help="Pattern string to search for"
 )
 parser.add_argument(
@@ -96,7 +101,13 @@ elif(ext == ".txt"):
 else:
     file_type = "unknown"
 
-pattern = args.pattern.replace("\n", "")
+if args.pattern_file:
+    with open(args.pattern_file, encoding="utf-8") as f:
+        pattern = f.read().strip()
+    if file_type == "fasta":
+        pattern = pattern.replace("\n", "")
+else:
+    pattern = args.pattern.replace("\n", "\\n")
 if args.alphabet is not None:
     alphabet = list(dict.fromkeys(args.alphabet.upper() if args.ignore_case else args.alphabet))
 else:
@@ -117,8 +128,10 @@ print(f"Pattern length (m): {len(pattern)}")
 text = loadFile(args.input_file, file_type)
 print(f"Input length (n):   {len(text)}")
 best_time = float('inf')
+total_time = 0
 for _ in range(args.repeat):
     match_count, match_time = naive(text, pattern)
+    total_time += match_time
     best_time = min(best_time, match_time)
 match_time = best_time
 #print(f"Time taken: {(end-start):.9f}\n")
@@ -127,6 +140,7 @@ print(f"Alphabet size:      {len(alphabet)}")
 print(f"Preprocessing time: {0:.8f} s")
 print(f"Matching time:      {(match_time):.8f} s")
 print(f"Total time:         {(match_time):.8f} s")
+print(f"Average time:       {(total_time/args.repeat):.8f} s")
 print(f"Match count:        {match_count}")
 
 '''

@@ -125,8 +125,13 @@ def main():
         help="Path to input file (.txt, .fasta, .fna, etc.)"
     )
     parser.add_argument(
+        "--pattern-file",
+        default=None,
+        help="Read pattern from a file instead of --pattern"
+    )
+    parser.add_argument(
         "--pattern",
-        required=True,
+        default=None, 
         help="Pattern string to search for"
     )
     parser.add_argument(
@@ -159,7 +164,12 @@ def main():
 
     file_type = detect_file_type(args.input_file, args.file_type)
 
-    pattern = args.pattern.strip()
+    if args.pattern_file:
+        with open(args.pattern_file, encoding="utf-8") as f:
+            pattern = f.read().strip()
+    else:
+        pattern = args.pattern.replace("\n", "\\n")
+    
     if args.ignore_case:
         pattern = pattern.upper()
 
@@ -190,6 +200,8 @@ def main():
     best_count = None
     best_len = None
 
+    total_time = 0
+
     for _ in range(args.repeat):
         start = time.perf_counter()
         count, seq_len = count_matches_in_file(
@@ -203,6 +215,7 @@ def main():
         end = time.perf_counter()
 
         elapsed = end - start
+        total_time += elapsed
         if elapsed < best_time:
             best_time = elapsed
             best_count = count
@@ -218,6 +231,7 @@ def main():
     print(f"Preprocessing time: {preprocess_time:.8f} s")
     print(f"Matching time:      {best_time:.8f} s")
     print(f"Total time:         {preprocess_time + best_time:.8f} s")
+    print(f"Average time:       {(total_time/args.repeat):.8f} s")
     print(f"Match count:        {best_count}")
 
 
